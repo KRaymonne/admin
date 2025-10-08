@@ -323,7 +323,7 @@ export function Vehicles() {
       setReformsData([...reformsData, newReform]);
       
       // Mettre à jour le statut du véhicule à "réformé"
-      updateVehicle(reformData.vehicleId, { status: 'reformed' });
+      updateVehicle({ ...state.vehicles.find(v => v.id === reformData.vehicleId)!, status: 'reformed' });
       
       // Réinitialiser le formulaire
       setReformData({
@@ -374,7 +374,27 @@ export function Vehicles() {
   };
   
   const handleEditVehicle = (vehicle: Vehicle) => {
-    setVehicleData({ ...vehicle });
+    setVehicleData({
+      id: vehicle.id || '',
+      licensePlate: vehicle.licensePlate || '',
+      brand: vehicle.brand || '',
+      model: vehicle.model || '',
+      type: vehicle.type || 'car',
+      year: vehicle.year || new Date().getFullYear(),
+      mileage: vehicle.mileage || 0,
+      civilRegistration: vehicle.civilRegistration || '',
+      administrativeRegistration: vehicle.administrativeRegistration || '',
+      acquisitionDate: vehicle.acquisitionDate || '',
+      usingEntity: vehicle.usingEntity || '',
+      holder: vehicle.holder || '',
+      chassisNumber: vehicle.chassisNumber || '',
+      status: vehicle.status || 'available',
+      assignedTo: vehicle.assignedTo || '',
+      fuelType: vehicle.fuelType || 'gasoline',
+      fullName: '',
+      fuel: '',
+      vehicleType: ''
+    });
     setModalTitle('Modifier un véhicule');
     setModalContent(renderVehicleForm());
     setIsModalOpen(true);
@@ -382,7 +402,7 @@ export function Vehicles() {
   
   const handleSaveVehicle = () => {
     if (vehicleData.id) {
-      updateVehicle(vehicleData.id, vehicleData);
+      updateVehicle(vehicleData);
     } else {
       addVehicle(vehicleData);
     }
@@ -423,7 +443,32 @@ export function Vehicles() {
   };
   
   const handleEditStateVehicle = (vehicle: Vehicle) => {
-    setStateVehicleData({ ...vehicle });
+    setStateVehicleData({
+      id: vehicle.id || '',
+      licensePlate: vehicle.licensePlate || '',
+      brand: vehicle.brand || '',
+      model: vehicle.model || '',
+      type: vehicle.type || 'car',
+      year: vehicle.year || new Date().getFullYear(),
+      mileage: vehicle.mileage || 0,
+      ministry: '',
+      department: '',
+      service: '',
+      budgetAllocation: '',
+      statePropertyNumber: '',
+      status: vehicle.status || 'available',
+      fullName: '',
+      fuel: '',
+      vehicleType: '',
+      usingEntity: vehicle.usingEntity || '',
+      holder: vehicle.holder || 'État',
+      acquisitionDate: vehicle.acquisitionDate || '',
+      civilRegistration: vehicle.civilRegistration || '',
+      administrativeRegistration: vehicle.administrativeRegistration || '',
+      chassisNumber: vehicle.chassisNumber || '',
+      assignedTo: vehicle.assignedTo || '',
+      fuelType: vehicle.fuelType || 'gasoline'
+    });
     setModalTitle('Modifier un véhicule de l\'État');
     setModalContent(renderStateVehicleForm());
     setIsModalOpen(true);
@@ -431,7 +476,7 @@ export function Vehicles() {
   
   const handleSaveStateVehicle = () => {
     if (stateVehicleData.id) {
-      updateVehicle(stateVehicleData.id, stateVehicleData);
+      updateVehicle(stateVehicleData);
     } else {
       addVehicle(stateVehicleData);
     }
@@ -458,7 +503,18 @@ export function Vehicles() {
   };
   
   const handleEditDriver = (driver: Driver) => {
-    setDriverData({ ...driver });
+    setDriverData({
+      id: driver.id || '',
+      firstName: driver.firstName || '',
+      lastName: driver.lastName || '',
+      licenseNumber: driver.licenseNumber || '',
+      licenseExpiryDate: driver.licenseExpiryDate || '',
+      dateOfBirth: driver.dateOfBirth || '',
+      phoneNumber: driver.phoneNumber || '',
+      address: driver.address || '',
+      status: driver.status || 'active',
+      assignedVehicleId: driver.assignedVehicleId || ''
+    });
     setModalTitle('Modifier un chauffeur');
     setModalContent(renderDriverForm());
     setIsModalOpen(true);
@@ -466,7 +522,7 @@ export function Vehicles() {
   
   const handleSaveDriver = () => {
     if (driverData.id) {
-      updateDriver(driverData.id, driverData);
+      updateDriver(driverData);
     } else {
       addDriver(driverData);
     }
@@ -490,7 +546,15 @@ export function Vehicles() {
   };
   
   const handleEditGarage = (garage: Garage) => {
-    setGarageData({ ...garage });
+    setGarageData({
+      id: garage.id || '',
+      name: garage.name || '',
+      address: garage.address || '',
+      phoneNumber: garage.phoneNumber || '',
+      manager: garage.manager || '',
+      capacity: garage.capacity || 0,
+      type: garage.type || 'public'
+    });
     setModalTitle('Modifier un garage');
     setModalContent(renderGarageForm());
     setIsModalOpen(true);
@@ -498,7 +562,7 @@ export function Vehicles() {
   
   const handleSaveGarage = () => {
     if (garageData.id) {
-      updateGarage(garageData.id, garageData);
+      updateGarage(garageData);
     } else {
       addGarage(garageData);
     }
@@ -523,7 +587,16 @@ export function Vehicles() {
   };
   
   const handleEditAuthorization = (authorization: VehicleAuthorization) => {
-    setAuthorizationData({ ...authorization });
+    setAuthorizationData({
+      id: authorization.id || '',
+      vehicleId: authorization.vehicleId || '',
+      authorizationNumber: authorization.authorizationNumber || '',
+      issueDate: authorization.issueDate || '',
+      expiryDate: authorization.expiryDate || '',
+      issuingAuthority: authorization.issuingAuthority || '',
+      purpose: authorization.purpose || '',
+      status: authorization.status || 'active'
+    });
     setModalTitle('Modifier une autorisation');
     setModalContent(renderAuthorizationForm());
     setIsModalOpen(true);
@@ -531,7 +604,7 @@ export function Vehicles() {
   
   const handleSaveAuthorization = () => {
     if (authorizationData.id) {
-      updateVehicleAuthorization(authorizationData.id, authorizationData);
+      updateVehicleAuthorization(authorizationData);
     } else {
       addVehicleAuthorization(authorizationData);
     }
@@ -556,7 +629,16 @@ export function Vehicles() {
   };
   
   const handleEditContentieux = (contentieux: Contentieux) => {
-    setContentieuxData({ ...contentieux });
+    setContentieuxData({
+      id: contentieux.id || '',
+      vehicleId: contentieux.vehicleId || '',
+      incidentDate: contentieux.incidentDate || '',
+      description: contentieux.description || '',
+      faultAttribution: contentieux.faultAttribution || 'undetermined',
+      conclusion: contentieux.conclusion || '',
+      status: contentieux.status || 'open',
+      resolutionDate: contentieux.resolutionDate || ''
+    });
     setModalTitle('Modifier un contentieux');
     setModalContent(renderContentieuxForm());
     setIsModalOpen(true);
@@ -564,7 +646,7 @@ export function Vehicles() {
   
   const handleSaveContentieux = () => {
     if (contentieuxData.id) {
-      updateContentieux(contentieuxData.id, contentieuxData);
+      updateContentieux(contentieuxData);
     } else {
       addContentieux(contentieuxData);
     }
@@ -591,7 +673,18 @@ export function Vehicles() {
   };
   
   const handleEditIntervention = (intervention: VehicleIntervention) => {
-    setInterventionData({ ...intervention });
+    setInterventionData({
+      id: intervention.id || '',
+      vehicleId: intervention.vehicleId || '',
+      garageId: intervention.garageId || '',
+      interventionDate: intervention.interventionDate || '',
+      type: intervention.type || 'maintenance',
+      description: intervention.description || '',
+      cost: intervention.cost || 0,
+      technician: intervention.technician || '',
+      status: intervention.status || 'scheduled',
+      nextInterventionDate: intervention.nextInterventionDate || ''
+    });
     setModalTitle('Modifier une intervention');
     setModalContent(renderInterventionForm());
     setIsModalOpen(true);
@@ -599,7 +692,7 @@ export function Vehicles() {
   
   const handleSaveIntervention = () => {
     if (interventionData.id) {
-      updateVehicleIntervention(interventionData.id, interventionData);
+      updateVehicleIntervention(interventionData);
     } else {
       addVehicleIntervention(interventionData);
     }
@@ -1531,8 +1624,8 @@ export function Vehicles() {
     const matchesSearch = vehicle.brand.toLowerCase().includes(stateVehiclesSearchTerm.toLowerCase()) ||
       vehicle.model.toLowerCase().includes(stateVehiclesSearchTerm.toLowerCase()) ||
       vehicle.licensePlate.toLowerCase().includes(stateVehiclesSearchTerm.toLowerCase()) ||
-      (vehicle.ministry && vehicle.ministry.toLowerCase().includes(stateVehiclesSearchTerm.toLowerCase())) ||
-      (vehicle.department && vehicle.department.toLowerCase().includes(stateVehiclesSearchTerm.toLowerCase()));
+      (vehicle.usingEntity && vehicle.usingEntity.toLowerCase().includes(stateVehiclesSearchTerm.toLowerCase())) ||
+      (vehicle.holder && vehicle.holder.toLowerCase().includes(stateVehiclesSearchTerm.toLowerCase()));
     
     return matchesSearch;
   });
@@ -1547,7 +1640,7 @@ export function Vehicles() {
   
   const filteredGarages = garagesData.filter(garage => {
     const matchesSearch = garage.name.toLowerCase().includes(garagesSearchTerm.toLowerCase()) ||
-      garage.address.toLowerCase().includes(garagesSearchTerm.toLowerCase()) ||
+      (garage.address && garage.address.toLowerCase().includes(garagesSearchTerm.toLowerCase())) ||
       (garage.manager && garage.manager.toLowerCase().includes(garagesSearchTerm.toLowerCase()));
     
     return matchesSearch;
@@ -1556,20 +1649,20 @@ export function Vehicles() {
   const filteredAuthorizations = authorizationsData.filter(authorization => {
     const matchesSearch = authorization.authorizationNumber.toLowerCase().includes(authorizationsSearchTerm.toLowerCase()) ||
       authorization.issuingAuthority.toLowerCase().includes(authorizationsSearchTerm.toLowerCase()) ||
-      authorization.purpose.toLowerCase().includes(authorizationsSearchTerm.toLowerCase());
+      (authorization.purpose && authorization.purpose.toLowerCase().includes(authorizationsSearchTerm.toLowerCase()));
     
     return matchesSearch;
   });
   
   const filteredContentieux = contentieuxDataList.filter(contentieux => {
     const matchesSearch = contentieux.description.toLowerCase().includes(contentieuxSearchTerm.toLowerCase()) ||
-      contentieux.conclusion.toLowerCase().includes(contentieuxSearchTerm.toLowerCase());
+      (contentieux.conclusion && contentieux.conclusion.toLowerCase().includes(contentieuxSearchTerm.toLowerCase()));
     
     return matchesSearch;
   });
   
   const filteredInterventions = interventionsData.filter(intervention => {
-    const matchesSearch = intervention.description.toLowerCase().includes(interventionsSearchTerm.toLowerCase()) ||
+    const matchesSearch = (intervention.description && intervention.description.toLowerCase().includes(interventionsSearchTerm.toLowerCase())) ||
       (intervention.technician && intervention.technician.toLowerCase().includes(interventionsSearchTerm.toLowerCase()));
     
     return matchesSearch;
@@ -2867,7 +2960,7 @@ export function Vehicles() {
       };
       return methodLabels[value as keyof typeof methodLabels];
     }},
-    { key: 'salePrice', title: 'Prix de vente (FCFA)', render: (value: string) => value ? `${parseFloat(value || 0).toFixed(2)} FCFA` : '-' },
+    { key: 'salePrice', title: 'Prix de vente (FCFA)', render: (value: string) => value ? `${parseFloat(value || '0').toFixed(2)} FCFA` : '-' },
     { key: 'buyer', title: 'Acheteur' },
     { key: 'buyerNumber', title: 'N° Téléphone acheteur' },
     { key: 'buyerAddress', title: 'Adresse acheteur' },
@@ -4180,7 +4273,7 @@ export function Vehicles() {
     <div className="min-h-screen bg-gray-50">
       <PageHeader 
         title="Gestion du Matériel Roulant" 
-        description="Gestion complète des véhicules, chauffeurs, garages et interventions"
+        subtitle="Gestion complète des véhicules, chauffeurs, garages et interventions"
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
