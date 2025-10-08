@@ -88,7 +88,6 @@ export function Vehicles() {
   // États pour les nouvelles fonctionnalités
   const [selectedVehicleForHistory, setSelectedVehicleForHistory] = useState('');
   const [vehicleHistoryData, setVehicleHistoryData] = useState<any[]>([]);
-  const [maintenanceCalendarData, setMaintenanceCalendarData] = useState<any[]>([]);
   
   // Ajout d'un état pour stocker les données de réforme
   const [reformsData, setReformsData] = useState<VehicleReform[]>([]);
@@ -1602,9 +1601,10 @@ export function Vehicles() {
     return matchesSearch;
   });
   
-  const filteredMaintenanceCalendar = maintenanceCalendarData.filter(maintenance => {
+  const filteredMaintenanceCalendar = interventionsData.filter(maintenance => {
     const matchesSearch = maintenance.type.toLowerCase().includes(maintenanceCalendarSearchTerm.toLowerCase()) ||
-      (maintenance.garageName && maintenance.garageName.toLowerCase().includes(maintenanceCalendarSearchTerm.toLowerCase()));
+      (maintenance.technician && maintenance.technician.toLowerCase().includes(maintenanceCalendarSearchTerm.toLowerCase())) ||
+      (maintenance.description && maintenance.description.toLowerCase().includes(maintenanceCalendarSearchTerm.toLowerCase()));
     
     return matchesSearch;
   });
@@ -2284,41 +2284,76 @@ export function Vehicles() {
     { key: 'endTime', title: 'Heure de fin' }
   ];
   
+  // Colonnes complètes pour le calendrier de maintenance
   const maintenanceCalendarColumns = [
-    { key: 'date', title: 'Date' },
-    { key: 'vehicle', title: 'Véhicule', render: (value: any, record: any) => `${record.brand} ${record.model} (${record.licensePlate})` },
-    { key: 'type', title: 'Type d\'intervention' },
-    { key: 'garage', title: 'Garage', render: (value: any, record: any) => record.garageName || value },
-    { key: 'status', title: 'Statut', render: (value: string) => {
-      const statusColors = {
-        scheduled: 'bg-yellow-100 text-yellow-800',
-        'in_progress': 'bg-blue-100 text-blue-800',
-        completed: 'bg-green-100 text-green-800',
-        cancelled: 'bg-gray-100 text-gray-800'
-      };
-      
-      const statusLabels = {
-        scheduled: 'Programmé',
-        'in_progress': 'En cours',
-        completed: 'Terminé',
-        cancelled: 'Annulé'
-      };
-      
-      return (
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[value as keyof typeof statusColors]}`}>
-          {statusLabels[value as keyof typeof statusLabels]}
-        </span>
-      );
+    { key: 'interventionDate', title: 'Date intervention' },
+    { key: 'vehicleId', title: 'Véhicule', render: (value: string) => {
+      const vehicle = vehiclesData.find(v => v.id === value);
+      return vehicle ? `${vehicle.brand} ${vehicle.model} - ${vehicle.licensePlate}` : 'Inconnu';
     }},
+    { key: 'garageId', title: 'Garage', render: (value: string) => {
+      const garage = garagesData.find(g => g.id === value);
+      return garage ? garage.name : 'Inconnu';
+    }},
+    { 
+      key: 'type', 
+      title: 'Type intervention', 
+      render: (value: string) => {
+        const typeLabels = {
+          maintenance: 'Maintenance',
+          repair: 'Réparation',
+          inspection: 'Inspection',
+          other: 'Autre'
+        };
+        return typeLabels[value as keyof typeof typeLabels];
+      }
+    },
+    { key: 'description', title: 'Description' },
+    { key: 'cost', title: 'Coût (FCFA)', render: (value: number) => value?.toLocaleString() },
+    { key: 'technician', title: 'Technicien' },
+    { 
+      key: 'status', 
+      title: 'Statut', 
+      render: (value: string) => {
+        const statusColors = {
+          scheduled: 'bg-yellow-100 text-yellow-800',
+          'in_progress': 'bg-blue-100 text-blue-800',
+          completed: 'bg-green-100 text-green-800',
+          cancelled: 'bg-gray-100 text-gray-800'
+        };
+        
+        const statusLabels = {
+          scheduled: 'Programmé',
+          'in_progress': 'En cours',
+          completed: 'Terminé',
+          cancelled: 'Annulé'
+        };
+        
+        return (
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[value as keyof typeof statusColors]}`}>
+            {statusLabels[value as keyof typeof statusLabels]}
+          </span>
+        );
+      }
+    },
+    { key: 'nextInterventionDate', title: 'Prochaine intervention' },
     { 
       key: 'actions', 
       title: 'Actions', 
       render: (_: any, record: any) => (
         <div className="flex space-x-2">
-          <Button variant="secondary" size="sm" icon={Edit}>
+          <Button variant="secondary" size="sm" icon={Edit} onClick={() => handleEditIntervention(record)}>
             Modifier
           </Button>
-          <Button variant="danger" size="sm" icon={Trash2}>
+          <Button 
+            variant="danger" 
+            size="sm" 
+            onClick={() => {
+              if (window.confirm('Êtes-vous sûr de vouloir supprimer cette intervention ?')) {
+                deleteVehicleIntervention(record.id);
+              }
+            }}
+          >
             Supprimer
           </Button>
         </div>
@@ -2892,52 +2927,6 @@ export function Vehicles() {
     }
   ];
   
-  const maintenanceCalendarSearchColumns = [
-    { key: 'date', title: 'Date' },
-    { key: 'vehicle', title: 'Véhicule', render: (value: any, record: any) => `${record.brand} ${record.model} (${record.licensePlate})` },
-    { key: 'type', title: 'Type intervention' },
-    { key: 'garage', title: 'Garage', render: (value: any, record: any) => record.garageName || value },
-    { 
-      key: 'status', 
-      title: 'Statut', 
-      render: (value: string) => {
-        const statusColors = {
-          scheduled: 'bg-yellow-100 text-yellow-800',
-          'in_progress': 'bg-blue-100 text-blue-800',
-          completed: 'bg-green-100 text-green-800',
-          cancelled: 'bg-gray-100 text-gray-800'
-        };
-        
-        const statusLabels = {
-          scheduled: 'Programmé',
-          'in_progress': 'En cours',
-          completed: 'Terminé',
-          cancelled: 'Annulé'
-        };
-        
-        return (
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[value as keyof typeof statusColors]}`}>
-            {statusLabels[value as keyof typeof statusLabels]}
-          </span>
-        );
-      }
-    },
-    { 
-      key: 'actions', 
-      title: 'Actions', 
-      render: (_: any, record: any) => (
-        <div className="flex space-x-2">
-          <Button variant="secondary" size="sm" icon={Edit}>
-            Modifier
-          </Button>
-          <Button variant="danger" size="sm" icon={Trash2}>
-            Supprimer
-          </Button>
-        </div>
-      )
-    }
-  ];
-  
   // Rendu du contenu principal
   const renderSearchContent = () => {
     return (
@@ -3407,7 +3396,7 @@ export function Vehicles() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input 
                       type="text" 
-                      placeholder="Type d'intervention, garage..." 
+                      placeholder="Type d'intervention, garage, technicien, description..." 
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       value={maintenanceCalendarSearchTerm}
                       onChange={(e) => setMaintenanceCalendarSearchTerm(e.target.value)}
@@ -3420,7 +3409,13 @@ export function Vehicles() {
               </div>
             </div>
             
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">Calendrier de maintenance</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-700">Calendrier de maintenance</h2>
+              <Button variant="primary" icon={Plus} onClick={handleAddIntervention}>
+                Ajouter une intervention
+              </Button>
+            </div>
+            
             <Table data={filteredMaintenanceCalendar} columns={maintenanceCalendarColumns} />
             
             {filteredMaintenanceCalendar.length === 0 && (
@@ -3686,7 +3681,10 @@ export function Vehicles() {
             <Card>
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Informations générales du véhicule</h2>
               {renderVehicleForm()}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
+                  Annuler
+                </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveVehicle}>
                   Enregistrer
                 </Button>
@@ -3698,7 +3696,10 @@ export function Vehicles() {
             <Card>
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Véhicules de l'État</h2>
               {renderStateVehicleForm()}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
+                  Annuler
+                </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveStateVehicle}>
                   Enregistrer
                 </Button>
@@ -3724,7 +3725,7 @@ export function Vehicles() {
                     fichierJoint: null
                   });
                 }}>
-                  Réinitialiser
+                  Annuler
                 </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveVehiclePiece}>
                   Enregistrer
@@ -3751,7 +3752,7 @@ export function Vehicles() {
                     fichierJoint: null
                   });
                 }}>
-                  Réinitialiser
+                  Annuler
                 </Button>
                 <Button variant="primary" icon={Save} onClick={handleSavePaymentCard}>
                   Enregistrer
@@ -3778,7 +3779,7 @@ export function Vehicles() {
                     fichierJoint: null
                   });
                 }}>
-                  Réinitialiser
+                  Annuler
                 </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveFuelManagement}>
                   Enregistrer
@@ -3791,7 +3792,22 @@ export function Vehicles() {
             <Card>
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Gestion des frais</h2>
               {renderVehicleExpenseForm()}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="secondary" onClick={() => {
+                  setVehicleExpenseData({
+                    id: '',
+                    date: '',
+                    nextDate: '',
+                    code: '',
+                    description: '',
+                    distance: '',
+                    amount: '',
+                    statut: 'non-payé',
+                    fichierJoint: null
+                  });
+                }}>
+                  Annuler
+                </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveVehicleExpense}>
                   Enregistrer
                 </Button>
@@ -3803,7 +3819,22 @@ export function Vehicles() {
             <Card>
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Opérations de Carte/Badge</h2>
               {renderPaymentCardForm()}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="secondary" onClick={() => {
+                  setPaymentCardData({
+                    id: '',
+                    dateAchat: '',
+                    typeBadge: '',
+                    typeBadgeLibre: '',
+                    numBadge: '',
+                    description: '',
+                    montant: '',
+                    dateMiseEnService: '',
+                    fichierJoint: null
+                  });
+                }}>
+                  Annuler
+                </Button>
                 <Button variant="primary" icon={Save} onClick={handleSavePaymentCard}>
                   Enregistrer
                 </Button>
@@ -3815,7 +3846,23 @@ export function Vehicles() {
             <Card>
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Maintenance</h2>
               {renderInterventionForm()}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="secondary" onClick={() => {
+                  setInterventionData({
+                    id: '',
+                    vehicleId: '',
+                    garageId: '',
+                    interventionDate: '',
+                    type: 'maintenance',
+                    description: '',
+                    cost: 0,
+                    technician: '',
+                    status: 'scheduled',
+                    nextInterventionDate: ''
+                  });
+                }}>
+                  Annuler
+                </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveIntervention}>
                   Enregistrer
                 </Button>
@@ -3827,7 +3874,23 @@ export function Vehicles() {
             <Card>
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Chauffeurs</h2>
               {renderDriverForm()}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="secondary" onClick={() => {
+                  setDriverData({
+                    id: '',
+                    firstName: '',
+                    lastName: '',
+                    licenseNumber: '',
+                    licenseExpiryDate: '',
+                    dateOfBirth: '',
+                    phoneNumber: '',
+                    address: '',
+                    status: 'active',
+                    assignedVehicleId: ''
+                  });
+                }}>
+                  Annuler
+                </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveDriver}>
                   Enregistrer
                 </Button>
@@ -3839,7 +3902,20 @@ export function Vehicles() {
             <Card>
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Garages</h2>
               {renderGarageForm()}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="secondary" onClick={() => {
+                  setGarageData({
+                    id: '',
+                    name: '',
+                    address: '',
+                    phoneNumber: '',
+                    manager: '',
+                    capacity: 0,
+                    type: 'public'
+                  });
+                }}>
+                  Annuler
+                </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveGarage}>
                   Enregistrer
                 </Button>
@@ -3851,7 +3927,21 @@ export function Vehicles() {
             <Card>
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Autorisations</h2>
               {renderAuthorizationForm()}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="secondary" onClick={() => {
+                  setAuthorizationData({
+                    id: '',
+                    vehicleId: '',
+                    authorizationNumber: '',
+                    issueDate: '',
+                    expiryDate: '',
+                    issuingAuthority: '',
+                    purpose: '',
+                    status: 'active'
+                  });
+                }}>
+                  Annuler
+                </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveAuthorization}>
                   Enregistrer
                 </Button>
@@ -3863,7 +3953,21 @@ export function Vehicles() {
             <Card>
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Contentieux</h2>
               {renderContentieuxForm()}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="secondary" onClick={() => {
+                  setContentieuxData({
+                    id: '',
+                    vehicleId: '',
+                    incidentDate: '',
+                    description: '',
+                    faultAttribution: 'undetermined',
+                    conclusion: '',
+                    status: 'open',
+                    resolutionDate: ''
+                  });
+                }}>
+                  Annuler
+                </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveContentieux}>
                   Enregistrer
                 </Button>
@@ -3875,7 +3979,23 @@ export function Vehicles() {
             <Card>
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Interventions</h2>
               {renderInterventionForm()}
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-end space-x-3">
+                <Button variant="secondary" onClick={() => {
+                  setInterventionData({
+                    id: '',
+                    vehicleId: '',
+                    garageId: '',
+                    interventionDate: '',
+                    type: 'maintenance',
+                    description: '',
+                    cost: 0,
+                    technician: '',
+                    status: 'scheduled',
+                    nextInterventionDate: ''
+                  });
+                }}>
+                  Annuler
+                </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveIntervention}>
                   Enregistrer
                 </Button>
@@ -3909,7 +4029,7 @@ export function Vehicles() {
               <h2 className="text-xl font-semibold text-gray-700 mb-4">Formulaire de réforme de véhicule</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <FormField label="Véhicule à réformer">
+                  <FormField label="Véhicule à réformer" required>
                     <select 
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       value={reformData.vehicleId}
@@ -3924,7 +4044,7 @@ export function Vehicles() {
                     </select>
                   </FormField>
                   
-                  <FormField label="Date de réforme">
+                  <FormField label="Date de réforme" required>
                     <input 
                       type="date" 
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -3933,7 +4053,7 @@ export function Vehicles() {
                     />
                   </FormField>
                   
-                  <FormField label="Motif de la réforme">
+                  <FormField label="Motif de la réforme" required>
                     <textarea 
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       rows={3}
@@ -3943,7 +4063,7 @@ export function Vehicles() {
                     />
                   </FormField>
                   
-                  <FormField label="Méthode de disposition">
+                  <FormField label="Méthode de disposition" required>
                     <select 
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                       value={reformData.disposalMethod}
@@ -3953,6 +4073,14 @@ export function Vehicles() {
                       <option value="destruction">Destruction</option>
                       <option value="don">Don</option>
                     </select>
+                  </FormField>
+                  
+                  <FormField label="Rapport de réforme">
+                    <input 
+                      type="file" 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                      onChange={(e) => setReformData({...reformData, reformReport: e.target.files?.[0] || null})}
+                    />
                   </FormField>
                 </div>
                 
@@ -3997,14 +4125,6 @@ export function Vehicles() {
                     </>
                   )}
                   
-                  <FormField label="Rapport de réforme">
-                    <input 
-                      type="file" 
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      onChange={(e) => setReformData({...reformData, reformReport: e.target.files?.[0] || null})}
-                    />
-                  </FormField>
-                  
                   <FormField label="Certificat de réforme">
                     <input 
                       type="file" 
@@ -4043,7 +4163,7 @@ export function Vehicles() {
                     reformCertificate: null
                   });
                 }}>
-                  Réinitialiser
+                  Annuler
                 </Button>
                 <Button variant="primary" icon={Save} onClick={handleSaveReform}>
                   Valider la réforme
