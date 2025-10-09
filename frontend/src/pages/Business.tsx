@@ -4,8 +4,6 @@ import { Card } from '../components/Common/Card';
 import { Table } from '../components/Common/Table';
 import { Button } from '../components/Common/Button';
 import { Business } from '../types';
-// @ts-ignore
-import { RecordManager } from '../components/RecordManager';
 import { 
   Plus, Edit, Trash2, Search as Download, FileText, FileSpreadsheet, 
   Briefcase, TrendingUp, Save, X, DollarSign, Euro, Upload, AlertCircle
@@ -14,7 +12,6 @@ import {
 export function BusinessPage(){
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [activeTab, setActiveTab] = useState('search');
-  const [businessRecords, setBusinessRecords] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currencyFilter, setCurrencyFilter] = useState<string>('all');
@@ -43,13 +40,9 @@ export function BusinessPage(){
     progress: 0
   });
 
-  // Records state for CRUD functionality
-  // const [businessRecords, setBusinessRecords] = useState<any[]>([]);
-
   // Charger les affaires depuis le backend
   React.useEffect(() => {
     fetchBusinesses();
-    fetchBusinessRecords();
   }, []);
 
   const fetchBusinesses = async () => {
@@ -62,76 +55,6 @@ export function BusinessPage(){
       console.error('Erreur chargement affaires:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // New function to fetch business records
-  const fetchBusinessRecords = async () => {
-    try {
-      // This would be replaced with actual API call to fetch business-related records
-      const mockRecords = [
-        {
-          id: '1',
-          title: 'Note de réunion client ABC',
-          description: 'Discussion sur les spécifications du projet',
-          date: '2024-01-15',
-          type: 'meeting',
-          status: 'completed',
-          businessId: businesses[0]?._id || ''
-        },
-        {
-          id: '2',
-          title: 'Rapport d\'analyse concurrentielle',
-          description: 'Analyse des offres concurrentes pour le projet XYZ',
-          date: '2024-01-20',
-          type: 'report',
-          status: 'pending',
-          businessId: businesses[0]?._id || ''
-        }
-      ];
-      setBusinessRecords(mockRecords);
-    } catch (err) {
-      console.error('Erreur chargement enregistrements:', err);
-    }
-  };
-
-  // New CRUD functions for business records
-  const createBusinessRecord = async (record: any) => {
-    try {
-      // In a real app, this would be an API call
-      const newRecord = {
-        ...record,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString()
-      };
-      setBusinessRecords(prev => [...prev, newRecord]);
-      return newRecord;
-    } catch (err) {
-      console.error('Erreur création enregistrement:', err);
-      throw err;
-    }
-  };
-
-  const updateBusinessRecord = async (id: string, record: any) => {
-    try {
-      // In a real app, this would be an API call
-      setBusinessRecords(prev => 
-        prev.map(item => item.id === id ? { ...record, id, updatedAt: new Date().toISOString() } : item)
-      );
-      return record;
-    } catch (err) {
-      console.error('Erreur mise à jour enregistrement:', err);
-      throw err;
-    }
-  };
-
-  const deleteBusinessRecord = async (id: string) => {
-    try {
-      // In a real app, this would be an API call
-      setBusinessRecords(prev => prev.filter(item => item.id !== id));
-    } catch (err) {
-      console.error('Erreur suppression enregistrement:', err);
-      throw err;
     }
   };
 
@@ -320,56 +243,6 @@ export function BusinessPage(){
     setEditingBusiness(null);
     setActiveTab('search');
   };
-  
-  // Fields configuration for RecordManager
-  const businessRecordFields = [
-    {
-      name: 'title',
-      label: 'Titre',
-      type: 'text',
-      required: true,
-      placeholder: 'Entrez le titre'
-    },
-    {
-      name: 'description',
-      label: 'Description',
-      type: 'textarea',
-      required: true,
-      placeholder: 'Entrez la description'
-    },
-    {
-      name: 'date',
-      label: 'Date',
-      type: 'date',
-      required: true
-    },
-    {
-      name: 'type',
-      label: 'Type',
-      type: 'select',
-      required: true,
-      options: [
-        { value: 'meeting', label: 'Réunion' },
-        { value: 'call', label: 'Appel téléphonique' },
-        { value: 'email', label: 'Email' },
-        { value: 'report', label: 'Rapport' },
-        { value: 'note', label: 'Note' },
-        { value: 'task', label: 'Tâche' }
-      ]
-    },
-    {
-      name: 'status',
-      label: 'Statut',
-      type: 'select',
-      required: true,
-      options: [
-        { value: 'pending', label: 'En attente' },
-        { value: 'in_progress', label: 'En cours' },
-        { value: 'completed', label: 'Terminé' },
-        { value: 'cancelled', label: 'Annulé' }
-      ]
-    }
-  ];
 
   // Fonctions d'export
   const exportToCSV = async () => {
@@ -1088,36 +961,8 @@ export function BusinessPage(){
           <button className={`px-4 py-2 font-medium ${activeTab === 'creation' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('creation')}>
             {editingBusiness ? 'Modification' : 'Création'}
           </button>
-          <button className={`px-4 py-2 font-medium ${activeTab === 'records' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setActiveTab('records')}>
-            Enregistrements
-          </button>
         </div>
-        {activeTab === 'records' ? (
-          <div className="p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Gestion des enregistrements d'affaires</h3>
-            <RecordManager
-              entityType="business"
-              fields={businessRecordFields}
-              initialRecords={businessRecords}
-              onRecordsChange={setBusinessRecords}
-              onRecordAdd={async (record: any) => {
-                // In a real app, this would be an API call
-                console.log('Adding business record:', record);
-                return record;
-              }}
-              onRecordUpdate={async (id: string, record: any) => {
-                // In a real app, this would be an API call
-                console.log('Updating business record:', id, record);
-              }}
-              onRecordDelete={async (id: string) => {
-                // In a real app, this would be an API call
-                console.log('Deleting business record:', id);
-              }}
-            />
-          </div>
-        ) : (
-          renderContent()
-        )}
+        {renderContent()}
       </Card>
       
       {renderImportModal()}
